@@ -1,0 +1,353 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>For SHOSHO ❤️</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #050005;
+    min-height: 100vh;
+    color: #ff7777;
+    font-family: Arial, sans-serif;
+    overflow-x: hidden;
+}
+
+.container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 55px 5px 30px;
+    position: relative;
+}
+
+.heading {
+    color: #ff9aab;
+    font-size: 14px;
+    letter-spacing: 4px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.heart-wrapper {
+    width: 100%;
+    max-width: 950px;
+    position: relative;
+}
+
+canvas {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.name {
+    position: absolute;
+    top: 49%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: clamp(45px, 10vw, 95px);
+    font-weight: 900;
+    letter-spacing: 8px;
+    color: #ff496b;
+    text-shadow: 0 0 15px #ff1744, 0 0 40px #ff1744;
+    animation: pulse 1.5s infinite;
+    white-space: nowrap;
+}
+
+@keyframes pulse {
+    50% {
+        transform: translate(-50%, -50%) scale(1.08);
+    }
+}
+
+.footer {
+    color: #ff9aab;
+    margin-top: 15px;
+    font-size: 17px;
+    letter-spacing: 1px;
+    text-shadow: 0 0 12px #ff1744;
+    text-align: center;
+}
+
+#roses {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.rose {
+    position: absolute;
+    top: -40px;
+    animation: fall linear forwards;
+}
+
+@keyframes fall {
+    to {
+        transform: translateY(110vh) rotate(650deg);
+        opacity: 0;
+    }
+}
+
+@media(max-width:500px) {
+    .container {
+        padding-top: 80px;
+    }
+
+    .name {
+        letter-spacing: 4px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div id="roses"></div>
+
+<div class="container">
+
+    <div class="heading">
+        A LITTLE SOMETHING FOR YOU ❤️
+    </div>
+
+    <div class="heart-wrapper">
+        <canvas id="heart"></canvas>
+        <div class="name">SHOSHO</div>
+    </div>
+
+    <div class="footer">
+        made by your future husband 💍
+    </div>
+
+</div>
+
+<script>
+
+const phrases = [
+"I love you", "Te amo", "Ti amo",
+"Je t'aime", "Ich liebe dich",
+"Seni seviyorum", "Я тебя люблю",
+"愛してる", "사랑해", "Aku cinta kamu",
+"Ik hou van jou", "Anh yêu em",
+"Σ' αγαπώ", "Kocham cię", "Eu te amo",
+"أحبك"
+];
+
+const canvas = document.getElementById("heart");
+const ctx = canvas.getContext("2d");
+
+const W = 1000;
+const H = 900;
+
+canvas.width = W;
+canvas.height = H;
+
+/* Create actual mathematical heart */
+
+const mask = document.createElement("canvas");
+mask.width = W;
+mask.height = H;
+
+const mctx = mask.getContext("2d");
+
+mctx.beginPath();
+
+for(let i = 0; i <= 2000; i++) {
+
+    const t = i / 2000 * Math.PI * 2;
+
+    const x = 16 * Math.pow(Math.sin(t), 3);
+
+    const y =
+        13 * Math.cos(t)
+        - 5 * Math.cos(2*t)
+        - 2 * Math.cos(3*t)
+        - Math.cos(4*t);
+
+    const px = 500 + x * 28;
+    const py = 440 - y * 24;
+
+    if(i === 0) {
+        mctx.moveTo(px, py);
+    } else {
+        mctx.lineTo(px, py);
+    }
+}
+
+mctx.closePath();
+mctx.fillStyle = "white";
+mctx.fill();
+
+const maskData = mctx.getImageData(0,0,W,H).data;
+
+/* Find all horizontal sections of the heart */
+
+let rows = [];
+
+for(let y = 35; y < 855; y += 21) {
+
+    let segments = [];
+    let inside = false;
+    let start = 0;
+
+    for(let x = 0; x < W; x++) {
+
+        const alpha = maskData[(y * W + x) * 4 + 3];
+
+        if(alpha > 100 && !inside) {
+            start = x;
+            inside = true;
+        }
+
+        if((alpha <= 100 || x === W-1) && inside) {
+
+            const end = x;
+
+            if(end - start > 35) {
+                segments.push({
+                    left: start + 5,
+                    right: end - 5
+                });
+            }
+
+            inside = false;
+        }
+    }
+
+    if(segments.length) {
+        rows.push({
+            y,
+            segments
+        });
+    }
+}
+
+/* Animate text row by row */
+
+let visibleRows = 0;
+
+function drawHeart() {
+
+    ctx.clearRect(0,0,W,H);
+
+    ctx.font = "bold 17px Arial";
+    ctx.textBaseline = "middle";
+
+    rows.slice(0, visibleRows).forEach((row, rowIndex) => {
+
+        row.segments.forEach((segment, segmentIndex) => {
+
+            const width = segment.right - segment.left;
+
+            let words = [];
+            let totalWidth = 0;
+
+            let attempts = 0;
+
+            while(attempts < 100) {
+
+                const phrase =
+                    phrases[(rowIndex * 5 + attempts + segmentIndex) % phrases.length];
+
+                const phraseWidth = ctx.measureText(phrase).width;
+
+                if(totalWidth + phraseWidth + 9 > width) {
+                    break;
+                }
+
+                words.push({
+                    text: phrase,
+                    width: phraseWidth
+                });
+
+                totalWidth += phraseWidth + 9;
+                attempts++;
+            }
+
+            totalWidth -= 9;
+
+            let x = segment.left + (width - totalWidth) / 2;
+
+            words.forEach((word, i) => {
+
+                const colors = [
+                    "#ff6868",
+                    "#ff9b83",
+                    "#ff525f",
+                    "#ff7770"
+                ];
+
+                ctx.fillStyle = colors[(rowIndex + i) % colors.length];
+                ctx.shadowColor = "#ff3434";
+                ctx.shadowBlur = 8;
+
+                ctx.fillText(word.text, x, row.y);
+
+                x += word.width + 9;
+
+            });
+
+        });
+
+    });
+
+    ctx.shadowBlur = 0;
+}
+
+function animate() {
+
+    if(visibleRows < rows.length) {
+
+        visibleRows++;
+
+        drawHeart();
+
+        setTimeout(animate, 100);
+    }
+}
+
+animate();
+
+/* Falling roses */
+
+const roseContainer = document.getElementById("roses");
+
+function createRose() {
+
+    const rose = document.createElement("span");
+
+    rose.className = "rose";
+
+    const flowers = ["🌹","🌸","🌷","🌺","💗"];
+
+    rose.textContent =
+        flowers[Math.floor(Math.random() * flowers.length)];
+
+    rose.style.left = Math.random() * 100 + "vw";
+    rose.style.fontSize = (15 + Math.random() * 18) + "px";
+    rose.style.animationDuration = (6 + Math.random() * 6) + "s";
+
+    roseContainer.appendChild(rose);
+
+    setTimeout(() => rose.remove(), 13000);
+}
+
+setInterval(createRose, 300);
+
+</script>
+
+</body>
+</html>
